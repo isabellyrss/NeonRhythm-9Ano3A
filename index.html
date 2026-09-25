@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Neon Rhythm: Cyber Battle - Terceirão DS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Press+Start+2P&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            user-select: none;
+            -webkit-user-select: none;
+            box-sizing: border-box;
+            touch-action: manipulation;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #030308;
+            color: #ffffff;
+            font-family: 'Rajdhani', sans-serif;
+        }
+
+        .font-orbitron { font-family: 'Orbitron', sans-serif; }
+        .font-pixel { font-family: 'Press Start 2P', cursive; }
+
+        /* Canvas Wrapper */
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .glass-panel {
+            background: rgba(10, 10, 25, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6);
+        }
+
+        .neon-btn {
+            position: relative;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            overflow: hidden;
+        }
+
+        .neon-btn:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 0 25px currentColor;
+        }
+
+        .neon-btn:active {
+            transform: translateY(1px) scale(0.98);
+        }
+
+        .scanlines {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(
+                to bottom,
+                rgba(255,255,255,0),
+                rgba(255,255,255,0) 50%,
+                rgba(0, 0, 0, 0.3) 50%,
+                rgba(0, 0, 0, 0.3)
+            );
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 5;
+            opacity: 0.25;
+        }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #090915; }
+        ::-webkit-scrollbar-thumb { background: #00f0ff; border-radius: 4px; }
+
+        .touch-arrow-btn {
+            width: 75px;
+            height: 75px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.2rem;
+            backdrop-filter: blur(8px);
+            transition: transform 0.08s ease, background-color 0.08s ease;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        }
+        .touch-arrow-btn:active {
+            transform: scale(0.85);
+        }
+        
+        #mobile-touch-controls {
+            bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container">
+        <canvas id="gameCanvas"></canvas>
+    </div>
+
+    <div class="scanlines"></div>
+
+    <div id="ui-layer" class="relative z-10 w-full h-screen flex flex-col justify-between pointer-events-none p-4 md:p-6">
+        
+        <div id="screen-title" class="pointer-events-auto absolute inset-0 flex flex-col items-center justify-center p-6 bg-black/70 backdrop-blur-md transition-opacity duration-500">
+            <div class="text-center max-w-3xl mx-auto space-y-6">
+                <div class="inline-block px-4 py-1.5 rounded-full bg-cyan-950/80 border border-cyan-400/50 text-cyan-300 font-bold text-xs md:text-sm tracking-widest uppercase shadow-lg">
+                    ✨ Projetos de TI • Terceirão Desenvolvimento de Sistemas
+                </div>
+
+                <h1 class="font-orbitron font-black text-4xl sm:text-6xl md:text-7xl text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-fuchsia-500 to-amber-300 leading-tight tracking-wider drop-shadow-[0_5px_15px_rgba(0,240,255,0.4)]">
+                    NEON RHYTHM
+                </h1>
+                <p class="font-pixel text-xs sm:text-sm text-fuchsia-400 tracking-widest">CYBER BATTLE EDITION</p>
+
+                <p class="text-gray-300 text-base md:text-lg max-w-xl mx-auto font-medium leading-relaxed">
+                    Desafie oponentes cibernéticos em batalhas de ritmo épicas. Veja como a <strong class="text-cyan-400">programação na prática</strong> cria jogos, gráficos em tempo real e música sintética!
+                </p>
+
+                <div class="flex flex-col sm:flex-row items-center justify-center gap-4 pt-6">
+                    <button id="btn-start-pc" class="neon-btn w-full sm:w-auto px-8 py-4 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 font-orbitron font-bold text-base md:text-lg text-black shadow-lg shadow-cyan-500/50 hover:from-cyan-400 hover:to-blue-500 flex items-center justify-center gap-2">
+                        <span class="text-2xl">💻</span> JOGAR NO COMPUTADOR
+                    </button>
+                    <button id="btn-start-mobile" class="neon-btn w-full sm:w-auto px-8 py-4 rounded-xl bg-gradient-to-r from-fuchsia-500 to-pink-600 font-orbitron font-bold text-base md:text-lg text-black shadow-lg shadow-fuchsia-500/50 hover:from-fuchsia-400 hover:to-pink-500 flex items-center justify-center gap-2">
+                        <span class="text-2xl">📱</span> JOGAR NO CELULAR
+                    </button>
+                </div>
+
+                <div class="pt-4 flex justify-center">
+                    <button id="btn-open-code-modal" class="neon-btn w-full sm:w-auto px-6 py-3 rounded-xl glass-panel border border-fuchsia-500/50 font-orbitron font-bold text-sm text-fuchsia-300 hover:bg-fuchsia-950/40">
+                        👾 VER COMO FUNCIONA O CÓDIGO
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="screen-select" class="pointer-events-auto absolute inset-0 hidden flex-col items-center justify-center p-4 md:p-8 bg-black/85 backdrop-blur-lg transition-all duration-300">
+            <div class="w-full max-w-5xl mx-auto space-y-6">
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-cyan-500/30 pb-4">
+                    <div>
+                        <h2 class="font-orbitron font-bold text-2xl md:text-3xl text-cyan-400">ESCOLHA SEU DESAFIO</h2>
+                        <p class="text-sm text-gray-400">Selecione o oponente, música e o estágio para a batalha</p>
+                    </div>
+                    <button id="btn-select-back" class="px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 text-sm font-semibold border border-gray-600">
+                        ⬅️ Voltar
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6" id="song-cards-container">
+                    <!-- Cards gerados via JS -->
+                </div>
+
+                <div class="p-4 rounded-xl glass-panel border border-fuchsia-500/30 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <span class="text-2xl">💡</span>
+                        <p class="text-xs md:text-sm text-gray-300">
+                            <strong>Você sabia?</strong> Cada nota e música deste jogo é gerada por fórmulas matemáticas em tempo real com a <code class="text-cyan-300 font-mono">Web Audio API</code>!
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="screen-hud" class="hidden w-full h-full flex flex-col justify-between pointer-events-none">
+            <div class="w-full max-w-4xl mx-auto flex flex-col gap-2 pointer-events-auto">
+                <div class="flex items-center justify-between glass-panel px-4 py-2 rounded-xl border border-cyan-500/30 mt-2">
+                    <div>
+                        <span id="hud-song-title" class="font-orbitron font-bold text-sm md:text-base text-cyan-300">MÚSICA</span>
+                        <span id="hud-bpm" class="ml-2 text-xs font-mono text-fuchsia-400">120 BPM</span>
+                    </div>
+                    <div class="flex items-center gap-6 font-orbitron font-bold text-sm md:text-base">
+                        <div class="text-cyan-400">SCORE: <span id="hud-score" class="text-white">0</span></div>
+                        <div class="text-fuchsia-400">COMBO: <span id="hud-combo" class="text-white">0</span></div>
+                    </div>
+                </div>
+
+                <div class="relative w-full h-7 rounded-full bg-gray-900/90 border-2 border-cyan-500/50 overflow-hidden shadow-lg glass-panel flex items-center px-1">
+                    <div id="health-bar-opp" class="h-4 rounded-l-full bg-gradient-to-r from-fuchsia-600 to-pink-500 transition-all duration-100" style="width: 50%;"></div>
+                    <div id="health-bar-player" class="h-4 rounded-r-full bg-gradient-to-r from-cyan-400 to-blue-500 transition-all duration-100" style="width: 50%;"></div>
+                    
+                    <div id="health-bar-head" class="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 flex items-center justify-center transition-all duration-75" style="left: 50%;">
+                        <div class="w-9 h-9 rounded-full bg-black border-2 border-yellow-400 shadow-[0_0_12px_#facc15] flex items-center justify-center font-bold text-xs">
+                            <span id="health-icon-face">⚔️</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="absolute top-20 right-4 pointer-events-auto hidden md:block">
+                <button id="btn-hud-code" class="px-3 py-1.5 rounded-lg glass-panel border border-cyan-400/50 text-xs font-bold text-cyan-300 hover:bg-cyan-950/60 shadow-lg flex items-center gap-1.5">
+                    <span>👾</span> <span>Explicar Código</span>
+                </button>
+            </div>
+
+            <div id="mobile-touch-controls" class="absolute left-1/2 -translate-x-1/2 w-full max-w-[350px] mx-auto pointer-events-auto hidden justify-between items-center gap-2">
+                <button data-key="ArrowLeft" class="touch-arrow-btn bg-fuchsia-900/80 border-4 border-fuchsia-500 text-fuchsia-300 active:bg-fuchsia-500 active:text-black">⬅️</button>
+                <button data-key="ArrowDown" class="touch-arrow-btn bg-cyan-900/80 border-4 border-cyan-500 text-cyan-300 active:bg-cyan-500 active:text-black">⬇️</button>
+                <button data-key="ArrowUp" class="touch-arrow-btn bg-green-900/80 border-4 border-green-500 text-green-300 active:bg-green-500 active:text-black">⬆️</button>
+                <button data-key="ArrowRight" class="touch-arrow-btn bg-red-900/80 border-4 border-red-500 text-red-300 active:bg-red-500 active:text-black">➡️</button>
+            </div>
+        </div>
+
+        <div id="screen-results" class="pointer-events-auto absolute inset-0 hidden flex-col items-center justify-center p-6 bg-black/90 backdrop-blur-xl transition-all duration-300">
+            <div class="w-full max-w-lg glass-panel rounded-2xl border-2 border-cyan-500/50 p-6 md:p-8 text-center space-y-6">
+                <h2 id="results-title" class="font-orbitron font-black text-3xl md:text-4xl text-cyan-400">
+                    BATALHA CONCLUÍDA!
+                </h2>
+
+                <div class="relative w-28 h-28 mx-auto rounded-full bg-gradient-to-tr from-cyan-950 to-fuchsia-950 border-4 border-yellow-400 flex items-center justify-center shadow-[0_0_30px_rgba(250,204,21,0.5)]">
+                    <span id="results-rank" class="font-orbitron font-black text-5xl text-yellow-300">S</span>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 text-left font-orbitron">
+                    <div class="p-3 rounded-lg bg-black/50 border border-gray-800">
+                        <div class="text-xs text-gray-400">Pontuação Total</div>
+                        <div id="results-score" class="text-xl font-bold text-cyan-300">0</div>
+                    </div>
+                    <div class="p-3 rounded-lg bg-black/50 border border-gray-800">
+                        <div class="text-xs text-gray-400">Precisão</div>
+                        <div id="results-accuracy" class="text-xl font-bold text-fuchsia-300">100%</div>
+                    </div>
+                    <div class="p-3 rounded-lg bg-black/50 border border-gray-800">
+                        <div class="text-xs text-gray-400">Maior Combo</div>
+                        <div id="results-maxcombo" class="text-xl font-bold text-yellow-300">0</div>
+                    </div>
+                    <div class="p-3 rounded-lg bg-black/50 border border-gray-800">
+                        <div class="text-xs text-gray-400">Notas Acertadas</div>
+                        <div id="results-hits" class="text-xl font-bold text-green-400">0</div>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-4 pt-2">
+                    <button id="btn-results-retry" class="neon-btn flex-1 py-3 rounded-xl bg-cyan-500 font-orbitron font-bold text-black hover:bg-cyan-400">
+                        🔄 Jogar Novamente
+                    </button>
+                    <button id="btn-results-select" class="neon-btn flex-1 py-3 rounded-xl bg-gray-800 border border-gray-600 font-orbitron font-bold text-gray-200 hover:bg-gray-700">
+                        🎶 Selecionar Música
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="modal-code" class="pointer-events-auto absolute inset-0 hidden flex-col items-center justify-center p-4 md:p-8 bg-black/90 backdrop-blur-xl z-50">
+            <div class="w-full max-w-4xl h-[85vh] glass-panel rounded-2xl border-2 border-cyan-400/60 flex flex-col overflow-hidden shadow-2xl">
+                <div class="p-4 md:p-6 bg-cyan-950/80 border-b border-cyan-500/40 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <span class="text-3xl">👾</span>
+                        <div>
+                            <h3 class="font-orbitron font-bold text-xl text-cyan-300">A Magia do Código!</h3>
+                            <p class="text-xs text-gray-300">Como a lógica de programação constrói este jogo em tempo real</p>
+                        </div>
+                    </div>
+                    <button id="btn-close-code-modal" class="w-10 h-10 rounded-full bg-red-900/60 hover:bg-red-600 text-white font-bold text-lg flex items-center justify-center border border-red-500">
+                        ✕
+                    </button>
+                </div>
+
+                <div class="flex border-b border-cyan-500/20 bg-black/40 overflow-x-auto">
+                    <button class="code-tab-btn px-5 py-3 font-orbitron text-xs md:text-sm font-bold text-cyan-400 border-b-2 border-cyan-400 bg-cyan-950/40" data-tab="tab-loop">
+                        1. Lookahead Buffer
+                    </button>
+                    <button class="code-tab-btn px-5 py-3 font-orbitron text-xs md:text-sm font-bold text-gray-400 hover:text-cyan-300" data-tab="tab-audio">
+                        2. Web Audio API
+                    </button>
+                    <button class="code-tab-btn px-5 py-3 font-orbitron text-xs md:text-sm font-bold text-gray-400 hover:text-cyan-300" data-tab="tab-hitbox">
+                        3. Matemática & Ritmo
+                    </button>
+                    <button class="code-tab-btn px-5 py-3 font-orbitron text-xs md:text-sm font-bold text-gray-400 hover:text-cyan-300" data-tab="tab-canvas">
+                        4. Animação no Canvas
+                    </button>
+                </div>
+
+                <div class="p-6 flex-1 overflow-y-auto space-y-4 text-gray-200 text-sm md:text-base leading-relaxed">
+                    <div id="tab-loop" class="tab-content space-y-4">
+                        <h4 class="font-orbitron font-bold text-lg text-cyan-300">Buffer de Antecipação (O Segredo das Setas)</h4>
+                        <p>Para as setas começarem do fundo da tela, usamos um <strong>Lookahead Buffer</strong> de 3 segundos. O código "olha para o futuro" da música e já avisa o sistema gráfico para desenhar a seta bem lá embaixo!</p>
+                        <div class="p-4 rounded-xl bg-gray-950 border border-cyan-500/30 font-mono text-xs md:text-sm text-cyan-300 space-y-1">
+                            <div class="text-gray-400">// Olha 3 segundos para o futuro da música</div>
+                            <div><span class="text-fuchsia-400">while</span> (nextBeatTime &lt; ctx.currentTime + <span class="text-green-400">3.0</span>) {</div>
+                            <div class="pl-4"><span class="text-yellow-300">spawnSetaParaOFuturo</span>(nextBeatTime);</div>
+                            <div class="pl-4">nextBeatTime += beatInterval;</div>
+                            <div>}</div>
+                        </div>
+                    </div>
+                    <div id="tab-audio" class="tab-content hidden space-y-4">
+                        <h4 class="font-orbitron font-bold text-lg text-cyan-300">Sintetizador por Código</h4>
+                        <p>A música é gerada pela <code>Web Audio API</code> do navegador gerando ondas senoidais e quadradas em tempo real.</p>
+                        <div class="p-4 rounded-xl bg-gray-950 border border-cyan-500/30 font-mono text-xs md:text-sm text-cyan-300 space-y-1">
+                            <div><span class="text-fuchsia-400">const</span> osc = audioCtx.<span class="text-green-300">createOscillator</span>();</div>
+                            <div>osc.frequency.<span class="text-green-300">setValueAtTime</span>(150, tempoAtual);</div>
+                        </div>
+                    </div>
+                    <div id="tab-hitbox" class="tab-content hidden space-y-4">
+                        <h4 class="font-orbitron font-bold text-lg text-cyan-300">Matemática da Colisão</h4>
+                        <p>Calculamos a diferença exata de tempo entre a batida alvo da música e o tempo em que você aperta o botão.</p>
+                        <div class="p-4 rounded-xl bg-gray-950 border border-cyan-500/30 font-mono text-xs md:text-sm text-cyan-300 space-y-1">
+                            <div><span class="text-fuchsia-400">let</span> difTempo = Math.<span class="text-green-300">abs</span>(nota.hitTime - currentTime);</div>
+                            <div class="pt-2"><span class="text-fuchsia-400">if</span> (difTempo &lt; 0.05) { <span class="text-green-400">retornar "PERFECT!";</span> }</div>
+                        </div>
+                    </div>
+                    <div id="tab-canvas" class="tab-content hidden space-y-4">
+                        <h4 class="font-orbitron font-bold text-lg text-cyan-300">Desenho Vetorial</h4>
+                        <p>Os personagens são desenhados com caminhos geométricos no Canvas, que mudam de acordo com as setas pressionadas e a resolução da sua tela.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * NEON RHYTHM: CYBER BATTLE
+         * Single-file Rhythm Game Engine (PC & Mobile Support)
+         * FIXED: Notes now spawn 3 seconds in advance at the bottom of the screen!
+         */
+
+        const SONGS = [
+            {
+                id: 'song1', title: 'Neon Sunrise', bpm: 120, difficulty: 'FÁCIL',
+                color: '#00f0ff', opponent: 'DJ KITTY-X', stage: 'CYBER NEON CLUB',
+                description: 'Ritmo synthwave envolvente perfeito para aquecimento.', icon: '🐱'
+            },
+            {
+                id: 'song2', title: 'Cybernetic Bounce', bpm: 138, difficulty: 'MÉDIO',
+                color: '#facc15', opponent: 'BOT-808', stage: 'SYNTHWAVE SUNSET',
+                description: 'Batida eletro acelerada com solo chiptune reluzente.', icon: '🤖'
+            },
+            {
+                id: 'song3', title: 'Glitch Overdrive', bpm: 155, difficulty: 'DIFÍCIL',
+                color: '#ff007f', opponent: 'GLITCH PHANTOM', stage: 'ARCADE GLITCH CITY',
+                description: 'Desafio intenso de velocidade com sintetizador frenético!', icon: '👻'
+            }
+        ];
+
+        // Rotação configurada para apontar no sentido correto
+        const LANES = [
+            { id: 0, dir: 'LEFT',  color: '#ff007f', keys: ['ArrowLeft',  'a', 'A'], label: '⬅️', rot: -Math.PI/2 },
+            { id: 1, dir: 'DOWN',  color: '#00f0ff', keys: ['ArrowDown',  's', 'S'], label: '⬇️', rot: Math.PI },
+            { id: 2, dir: 'UP',    color: '#22c55e', keys: ['ArrowUp',    'w', 'W'], label: '⬆️', rot: 0 },
+            { id: 3, dir: 'RIGHT', color: '#f59e0b', keys: ['ArrowRight', 'd', 'D'], label: '➡️', rot: Math.PI/2 }
+        ];
+
+        const audioEngine = {
+            ctx: null,
+            isPlaying: false,
+            
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            },
+            
+            playClickSFX() {
+                this.init();
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain); gain.connect(this.ctx.destination);
+                osc.type = 'sine'; osc.frequency.setValueAtTime(600, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(300, this.ctx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.3, this.ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
+                osc.start(); osc.stop(this.ctx.currentTime + 0.1);
+            },
+            
+            playHitSFX() {
+                this.init();
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain); gain.connect(this.ctx.destination);
+                osc.type = 'square'; osc.frequency.setValueAtTime(400, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(800, this.ctx.currentTime + 0.05);
+                gain.gain.setValueAtTime(0.2, this.ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.05);
+                osc.start(); osc.stop(this.ctx.currentTime + 0.05);
+            },
+            
+            playMissSFX() {
+                this.init();
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain); gain.connect(this.ctx.destination);
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(50, this.ctx.currentTime + 0.2);
+                gain.gain.setValueAtTime(0.3, this.ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.2);
+                osc.start(); osc.stop(this.ctx.currentTime + 0.2);
+            },
+
+            startSong(song, onBeat) {
+                this.init();
+                this.isPlaying = true;
+                
+                const bps = song.bpm / 60;
+                const beatInterval = 1 / bps;
+                
+                // CORREÇÃO AQUI: Damos 3.5 segundos de atraso inicial antes da primeira nota
+                // para que dê tempo de a nota nascer lá embaixo e subir até o topo!
+                let nextBeatTime = this.ctx.currentTime + 3.5; 
+                let beatCount = 0;
+                
+                this.loop = () => {
+                    if (!this.isPlaying) return;
+                    
+                    // CORREÇÃO AQUI: Em vez de olhar só 0.1 segundos pro futuro, olhamos 3.0 segundos pro futuro.
+                    // Isso faz as notas nascerem no canvas e começarem a rolar bem antes!
+                    while (nextBeatTime < this.ctx.currentTime + 3.0) {
+                        this.playBeat(nextBeatTime, beatCount % 4 === 0);
+                        if (onBeat) onBeat(beatCount, nextBeatTime);
+                        
+                        nextBeatTime += beatInterval;
+                        beatCount++;
+                    }
+                    
+                    this.timerId = requestAnimationFrame(this.loop);
+                };
+                
+                this.loop();
+            },
+            
+            playBeat(time, isDownbeat) {
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain); gain.connect(this.ctx.destination);
+                
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(150, time);
+                osc.frequency.exponentialRampToValueAtTime(0.01, time + 0.1);
+                
+                gain.gain.setValueAtTime(isDownbeat ? 0.6 : 0.4, time);
+                gain.gain.exponentialRampToValueAtTime(0.01, time + 0.1);
+                
+                osc.start(time);
+                osc.stop(time + 0.1);
+            },
+
+            stopSong() {
+                this.isPlaying = false;
+                if (this.timerId) cancelAnimationFrame(this.timerId);
+            }
+        };
+
+        class StageRenderer {
+            constructor(canvas, ctx) {
+                this.canvas = canvas;
+                this.ctx = ctx;
+            }
+
+            render(stageName, pulse) {
+                const w = this.canvas.width;
+                const h = this.canvas.height;
+                this.ctx.clearRect(0, 0, w, h);
+
+                if (stageName === 'CYBER NEON CLUB') {
+                    this.ctx.fillStyle = '#050510';
+                    this.ctx.fillRect(0, 0, w, h);
+                    
+                    this.ctx.strokeStyle = `rgba(0, 240, 255, ${0.1 + pulse * 0.1})`;
+                    this.ctx.lineWidth = 2;
+                    this.ctx.beginPath();
+                    for(let i=0; i<w; i+=50) { this.ctx.moveTo(i, h*0.7); this.ctx.lineTo(i, h); }
+                    for(let i=h*0.7; i<h; i+=30) { this.ctx.moveTo(0, i); this.ctx.lineTo(w, i); }
+                    this.ctx.stroke();
+                } else if (stageName === 'SYNTHWAVE SUNSET') {
+                    const grad = this.ctx.createLinearGradient(0, 0, 0, h);
+                    grad.addColorStop(0, '#1a0033');
+                    grad.addColorStop(0.5, '#ff007f');
+                    grad.addColorStop(1, '#000000');
+                    this.ctx.fillStyle = grad;
+                    this.ctx.fillRect(0, 0, w, h);
+                    
+                    this.ctx.fillStyle = '#facc15';
+                    this.ctx.beginPath();
+                    this.ctx.arc(w/2, h*0.5, 100 + pulse*5, 0, Math.PI*2);
+                    this.ctx.fill();
+                } else {
+                    this.ctx.fillStyle = '#0a0a0a';
+                    this.ctx.fillRect(0, 0, w, h);
+                    this.ctx.fillStyle = `rgba(34, 197, 94, ${0.1 + pulse*0.1})`;
+                    for(let i=0; i<100; i++) {
+                        this.ctx.fillRect(Math.random()*w, Math.random()*h, 2, Math.random()*20);
+                    }
+                }
+            }
+        }
+
+        class CharacterRenderer {
+            constructor(ctx) {
+                this.ctx = ctx;
+            }
+            
+            drawPlayer(x, y, scale, pose, pulse) {
+                this.ctx.save();
+                this.ctx.translate(x, y + (pulse * 5));
+                this.ctx.scale(scale, scale);
+                
+                this.ctx.fillStyle = '#00f0ff';
+                this.ctx.fillRect(-20, 0, 40, 60);
+                
+                this.ctx.fillStyle = '#e2e8f0';
+                this.ctx.beginPath();
+                this.ctx.arc(0, -20, 25, 0, Math.PI*2);
+                this.ctx.fill();
+                
+                this.ctx.fillStyle = '#000';
+                this.ctx.fillRect(-15, -30, 30, 15);
+                this.ctx.fillStyle = pose === 'MISS' ? '#ef4444' : '#00f0ff';
+                this.ctx.fillRect(-10, -25, 20, 5);
+
+                if(pose === 'LEFT') { this.ctx.translate(-10, 0); }
+                else if(pose === 'RIGHT') { this.ctx.translate(10, 0); }
+                else if(pose === 'UP') { this.ctx.translate(0, -10); }
+                else if(pose === 'DOWN') { this.ctx.translate(0, 10); }
+                
+                this.ctx.restore();
+            }
+            
+            drawOpponent(x, y, scale, type, pose, pulse) {
+                this.ctx.save();
+                this.ctx.translate(x, y + (pulse * 5));
+                this.ctx.scale(scale, scale);
+                
+                let color = '#ff007f';
+                if(type === 'BOT-808') color = '#facc15';
+                if(type === 'GLITCH PHANTOM') color = '#a855f7';
+                
+                this.ctx.fillStyle = color;
+                this.ctx.fillRect(-20, 0, 40, 60);
+                
+                this.ctx.fillStyle = '#333';
+                this.ctx.beginPath();
+                this.ctx.arc(0, -20, 25, 0, Math.PI*2);
+                this.ctx.fill();
+                
+                this.ctx.fillStyle = color;
+                this.ctx.beginPath();
+                this.ctx.arc(-10, -25, 5, 0, Math.PI*2);
+                this.ctx.arc(10, -25, 5, 0, Math.PI*2);
+                this.ctx.fill();
+                
+                if(pose === 'LEFT') { this.ctx.translate(-10, 0); }
+                else if(pose === 'RIGHT') { this.ctx.translate(10, 0); }
+                else if(pose === 'UP') { this.ctx.translate(0, -10); }
+                else if(pose === 'DOWN') { this.ctx.translate(0, 10); }
+
+                this.ctx.restore();
+            }
+        }
+
+        class NoteManager {
+            constructor() {
+                this.notes = [];
+                this.feedbacks = [];
+                this.particles = [];
+                this.speedPerSecond = 500; // Velocidade em Pixels por segundo
+            }
+
+            spawnNote(laneIndex, hitTime) {
+                this.notes.push({
+                    lane: laneIndex,
+                    hitTime: hitTime, // Tempo alvo no áudio
+                    y: 9999,          // Inicia fora da tela, a atualização recalcula instantaneamente
+                    hit: false,
+                    missed: false
+                });
+            }
+
+            update(currentTime, targetY, onMissCallback) {
+                for (let i = this.notes.length - 1; i >= 0; i--) {
+                    const n = this.notes[i];
+                    
+                    // Cálculo correto:
+                    // hitTime > currentTime significa que a nota ocorrerá no futuro (valor positivo).
+                    // Multiplicado pela velocidade, obtemos a distância em pixels que a nota ainda precisa percorrer.
+                    // Adicionamos isso ao targetY. Assim, a nota nasce LÁ EMBAIXO e vai subindo em direção ao targetY (150).
+                    n.y = targetY + (n.hitTime - currentTime) * this.speedPerSecond;
+
+                    // Erro: Janela de tolerância passou
+                    if (currentTime > n.hitTime + 0.15 && !n.missed && !n.hit) {
+                        n.missed = true;
+                        if (onMissCallback) onMissCallback(n.lane);
+                        this.createFeedback('MISS', '#ef4444', targetY);
+                    }
+
+                    // Limpeza de memória: A nota subiu até passar o topo da tela
+                    if (currentTime > n.hitTime + 0.5) {
+                        this.notes.splice(i, 1);
+                    }
+                }
+
+                for (let i = this.feedbacks.length - 1; i >= 0; i--) {
+                    const fb = this.feedbacks[i];
+                    fb.y -= 1.5; fb.alpha -= 0.025;
+                    if (fb.alpha <= 0) this.feedbacks.splice(i, 1);
+                }
+
+                for (let i = this.particles.length - 1; i >= 0; i--) {
+                    const p = this.particles[i];
+                    p.x += p.vx; p.y += p.vy; p.alpha -= 0.05;
+                    if (p.alpha <= 0) this.particles.splice(i, 1);
+                }
+            }
+
+            checkHit(laneIndex, currentTime, targetY, onHitCallback) {
+                let closestNote = null;
+                let minTimeDiff = Infinity;
+
+                for (let i = 0; i < this.notes.length; i++) {
+                    const n = this.notes[i];
+                    if (n.lane === laneIndex && !n.hit && !n.missed) {
+                        const timeDiff = Math.abs(n.hitTime - currentTime);
+                        if (timeDiff < minTimeDiff) {
+                            minTimeDiff = timeDiff;
+                            closestNote = n;
+                        }
+                    }
+                }
+
+                // Tolerância de ~150ms
+                if (closestNote && minTimeDiff < 0.15) {
+                    closestNote.hit = true;
+                    let rating = 'GOOD'; let scoreAdd = 100; let color = '#22c55e';
+
+                    if (minTimeDiff < 0.05) { rating = 'PERFECT!'; scoreAdd = 300; color = '#00f0ff'; }
+                    else if (minTimeDiff < 0.10) { rating = 'GREAT!'; scoreAdd = 200; color = '#facc15'; }
+
+                    this.createFeedback(rating, color, targetY);
+                    this.createSparks(LANES[laneIndex].x, targetY, color);
+                    if (onHitCallback) onHitCallback(rating, scoreAdd, laneIndex);
+                    return true;
+                }
+                return false;
+            }
+
+            createFeedback(text, color, targetY) {
+                this.feedbacks.push({
+                    text, color,
+                    x: window.innerWidth / 2,
+                    y: targetY + 100, // Feedback um pouco abaixo do alvo
+                    alpha: 1.0
+                });
+            }
+
+            createSparks(x, y, color) {
+                for (let i = 0; i < 8; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const spd = Math.random() * 5 + 3;
+                    this.particles.push({
+                        x, y, vx: Math.cos(angle) * spd, vy: Math.sin(angle) * spd,
+                        color, alpha: 1.0
+                    });
+                }
+            }
+
+            draw(ctx, laneStartX, laneWidth, targetY) {
+                LANES.forEach((lane, i) => { lane.x = laneStartX + i * laneWidth + laneWidth / 2; });
+
+                // Desenhar Receptores (Alvos no Topo)
+                LANES.forEach((lane) => {
+                    this.drawArrow(ctx, lane.x, targetY, 52, lane.color, lane.rot, true, lane.active);
+                });
+
+                // Desenhar Notas Rolando
+                this.notes.forEach((n) => {
+                    if (!n.hit) {
+                        const lane = LANES[n.lane];
+                        this.drawArrow(ctx, lane.x, n.y, 52, lane.color, lane.rot, false, false);
+                    }
+                });
+
+                // Desenhar Efeitos (Partículas e Feedback)
+                this.feedbacks.forEach((fb) => {
+                    ctx.save();
+                    ctx.font = '900 40px "Orbitron", sans-serif'; ctx.fillStyle = fb.color;
+                    ctx.globalAlpha = fb.alpha; ctx.textAlign = 'center';
+                    ctx.shadowBlur = 20; ctx.shadowColor = fb.color;
+                    ctx.fillText(fb.text, fb.x, fb.y);
+                    ctx.restore();
+                });
+
+                this.particles.forEach((p) => {
+                    ctx.save();
+                    ctx.fillStyle = p.color; ctx.globalAlpha = p.alpha;
+                    ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, Math.PI * 2); ctx.fill();
+                    ctx.restore();
+                });
+            }
+
+            drawArrow(ctx, x, y, size, color, rotation, isTarget, isActive) {
+                ctx.save();
+                ctx.translate(x, y);
+                ctx.rotate(rotation);
+
+                ctx.shadowBlur = isActive ? 25 : 12; ctx.shadowColor = color;
+
+                ctx.beginPath();
+                ctx.moveTo(0, -size / 2);
+                ctx.lineTo(size / 2, 0); ctx.lineTo(size / 4, 0);
+                ctx.lineTo(size / 4, size / 2); ctx.lineTo(-size / 4, size / 2);
+                ctx.lineTo(-size / 4, 0); ctx.lineTo(-size / 2, 0);
+                ctx.closePath();
+
+                if (isTarget) {
+                    ctx.lineWidth = 3; ctx.strokeStyle = color; ctx.stroke();
+                    if (isActive) { ctx.fillStyle = color; ctx.globalAlpha = 0.5; ctx.fill(); }
+                } else {
+                    ctx.fillStyle = color; ctx.fill();
+                    ctx.lineWidth = 1; ctx.strokeStyle = '#ffffff'; ctx.stroke();
+                }
+                ctx.restore();
+            }
+        }
+
+        class GameEngine {
+            constructor() {
+                this.canvas = document.getElementById('gameCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                
+                this.stageRenderer = new StageRenderer(this.canvas, this.ctx);
+                this.charRenderer = new CharacterRenderer(this.ctx);
+                this.noteManager = new NoteManager();
+
+                this.state = 'TITLE'; 
+                this.platform = 'PC';
+                this.selectedSong = SONGS[0];
+
+                this.score = 0; this.combo = 0; this.maxCombo = 0;
+                this.health = 50; this.hits = 0; this.totalNotes = 0;
+                this.playerPose = 'IDLE'; this.oppPose = 'IDLE';
+                this.poseTimer = null;
+
+                this.resize();
+                window.addEventListener('resize', () => this.resize());
+                this.setupInputs();
+                this.setupUI();
+            }
+
+            resize() {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+            }
+
+            // Define onde as setas devem ser acertadas (perto do topo, abaixo da barra de vida)
+            getTargetY() {
+                return 160; 
+            }
+
+            setupInputs() {
+                window.addEventListener('keydown', (e) => {
+                    if (this.state !== 'PLAYING') return;
+                    LANES.forEach((lane, i) => {
+                        if (lane.keys.includes(e.key) && !lane.active) {
+                            lane.active = true;
+                            this.handleInput(i);
+                        }
+                    });
+                });
+                window.addEventListener('keyup', (e) => {
+                    LANES.forEach((lane) => { if (lane.keys.includes(e.key)) lane.active = false; });
+                });
+
+                document.querySelectorAll('#mobile-touch-controls button').forEach((btn) => {
+                    const key = btn.getAttribute('data-key');
+                    const laneIdx = LANES.findIndex(l => l.keys.includes(key));
+
+                    const handlePress = (e) => {
+                        e.preventDefault();
+                        if (this.state === 'PLAYING' && laneIdx !== -1 && !LANES[laneIdx].active) {
+                            LANES[laneIdx].active = true;
+                            this.handleInput(laneIdx);
+                        }
+                    };
+
+                    const handleRelease = (e) => {
+                        e.preventDefault();
+                        if (laneIdx !== -1) LANES[laneIdx].active = false;
+                    };
+
+                    btn.addEventListener('touchstart', handlePress, { passive: false });
+                    btn.addEventListener('mousedown', handlePress);
+                    btn.addEventListener('touchend', handleRelease, { passive: false });
+                    btn.addEventListener('mouseup', handleRelease);
+                    btn.addEventListener('mouseleave', handleRelease);
+                });
+            }
+
+            handleInput(laneIndex) {
+                const lane = LANES[laneIndex];
+                const currentTime = audioEngine.ctx ? audioEngine.ctx.currentTime : 0;
+                const targetY = this.getTargetY();
+                
+                const hitSuccess = this.noteManager.checkHit(laneIndex, currentTime, targetY, (rating, points) => {
+                    this.score += points * (1 + Math.floor(this.combo / 10) * 0.2);
+                    this.combo++;
+                    if (this.combo > this.maxCombo) this.maxCombo = this.combo;
+                    this.health = Math.min(100, this.health + 3);
+                    this.hits++;
+                    this.setPose('PLAYER', lane.dir);
+                    audioEngine.playHitSFX();
+                });
+
+                if (!hitSuccess) {
+                    this.combo = 0;
+                    this.health = Math.max(0, this.health - 6);
+                    this.setPose('PLAYER', 'MISS');
+                    audioEngine.playMissSFX();
+                }
+
+                this.updateHUD();
+                this.checkGameOver();
+            }
+
+            setPose(who, pose) {
+                if (who === 'PLAYER') this.playerPose = pose;
+                if (who === 'OPPONENT') this.oppPose = pose;
+                clearTimeout(this.poseTimer);
+                this.poseTimer = setTimeout(() => { this.playerPose = 'IDLE'; this.oppPose = 'IDLE'; }, 300);
+            }
+
+            setupUI() {
+                const cardsContainer = document.getElementById('song-cards-container');
+                cardsContainer.innerHTML = '';
+
+                SONGS.forEach((song) => {
+                    const card = document.createElement('div');
+                    card.className = `glass-panel p-5 rounded-2xl border-2 transition-all cursor-pointer hover:scale-105 flex flex-col justify-between space-y-4`;
+                    card.style.borderColor = song.color;
+
+                    card.innerHTML = `
+                        <div class="flex items-center justify-between">
+                            <span class="text-3xl">${song.icon}</span>
+                            <span class="px-2.5 py-1 rounded-full text-xs font-bold font-mono" style="background: ${song.color}33; color: ${song.color}">${song.difficulty}</span>
+                        </div>
+                        <div>
+                            <h3 class="font-orbitron font-bold text-xl text-white">${song.title}</h3>
+                            <p class="text-xs text-gray-400 font-mono mt-1">${song.bpm} BPM • ${song.stage}</p>
+                        </div>
+                        <button class="w-full py-2.5 rounded-xl font-orbitron font-bold text-sm text-black shadow-lg" style="background: ${song.color}">
+                            SELECIONAR ➡️
+                        </button>
+                    `;
+
+                    card.addEventListener('click', () => {
+                        audioEngine.playClickSFX();
+                        this.selectedSong = song;
+                        this.startBattle();
+                    });
+                    cardsContainer.appendChild(card);
+                });
+
+                document.getElementById('btn-start-pc').addEventListener('click', () => {
+                    audioEngine.playClickSFX(); this.platform = 'PC'; this.showScreen('SELECT');
+                });
+                document.getElementById('btn-start-mobile').addEventListener('click', () => {
+                    audioEngine.playClickSFX(); this.platform = 'MOBILE'; this.showScreen('SELECT');
+                });
+                document.getElementById('btn-select-back').addEventListener('click', () => {
+                    audioEngine.playClickSFX(); this.showScreen('TITLE');
+                });
+                document.getElementById('btn-results-retry').addEventListener('click', () => {
+                    audioEngine.playClickSFX(); this.startBattle();
+                });
+                document.getElementById('btn-results-select').addEventListener('click', () => {
+                    audioEngine.playClickSFX(); this.showScreen('SELECT');
+                });
+
+                const codeModal = document.getElementById('modal-code');
+                const openModal = () => { audioEngine.playClickSFX(); codeModal.classList.remove('hidden'); codeModal.classList.add('flex'); };
+                const closeModal = () => { audioEngine.playClickSFX(); codeModal.classList.add('hidden'); codeModal.classList.remove('flex'); };
+                document.getElementById('btn-open-code-modal').addEventListener('click', openModal);
+                document.getElementById('btn-hud-code').addEventListener('click', openModal);
+                document.getElementById('btn-close-code-modal').addEventListener('click', closeModal);
+
+                document.querySelectorAll('.code-tab-btn').forEach((btn) => {
+                    btn.addEventListener('click', () => {
+                        audioEngine.playClickSFX();
+                        const tabId = btn.getAttribute('data-tab');
+                        document.querySelectorAll('.code-tab-btn').forEach(b => {
+                            b.classList.remove('text-cyan-400', 'border-b-2', 'border-cyan-400', 'bg-cyan-950/40');
+                            b.classList.add('text-gray-400');
+                        });
+                        btn.classList.add('text-cyan-400', 'border-b-2', 'border-cyan-400', 'bg-cyan-950/40');
+                        document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+                        document.getElementById(tabId).classList.remove('hidden');
+                    });
+                });
+            }
+
+            showScreen(screenName) {
+                this.state = screenName;
+                document.getElementById('screen-title').classList.add('hidden');
+                document.getElementById('screen-select').classList.add('hidden');
+                document.getElementById('screen-hud').classList.add('hidden');
+                document.getElementById('screen-results').classList.add('hidden');
+
+                if (screenName === 'TITLE') document.getElementById('screen-title').classList.remove('hidden');
+                if (screenName === 'SELECT') document.getElementById('screen-select').classList.remove('hidden');
+                if (screenName === 'PLAYING') document.getElementById('screen-hud').classList.remove('hidden');
+                if (screenName === 'RESULTS') document.getElementById('screen-results').classList.remove('hidden');
+            }
+
+            startBattle() {
+                this.score = 0; this.combo = 0; this.maxCombo = 0;
+                this.health = 50; this.hits = 0; this.totalNotes = 0;
+                this.noteManager.notes = []; this.noteManager.feedbacks = [];
+
+                document.getElementById('hud-song-title').innerText = this.selectedSong.title.toUpperCase();
+                document.getElementById('hud-bpm').innerText = `${this.selectedSong.bpm} BPM`;
+                document.getElementById('health-icon-face').innerText = this.selectedSong.icon;
+
+                const touchControls = document.getElementById('mobile-touch-controls');
+                if (this.platform === 'MOBILE') {
+                    touchControls.classList.remove('hidden'); touchControls.classList.add('flex');
+                } else {
+                    touchControls.classList.add('hidden'); touchControls.classList.remove('flex');
+                }
+
+                this.updateHUD();
+                this.showScreen('PLAYING');
+
+                audioEngine.startSong(this.selectedSong, (step, time) => {
+                    // Padrão processado no futuro (3s à frente do áudio)
+                    if (step % 2 === 0 && Math.random() > 0.3) {
+                        const lane = Math.floor(Math.random() * 4);
+                        this.noteManager.spawnNote(lane, time);
+                        this.totalNotes++;
+                        // Faz o oponente reagir no tempo exato que a nota vai ser batida, usando setTimeout baseado no atraso real
+                        const delayToHit = (time - audioEngine.ctx.currentTime) * 1000;
+                        setTimeout(() => {
+                            if(this.state === 'PLAYING') this.setPose('OPPONENT', LANES[lane].dir);
+                        }, delayToHit);
+                    }
+                });
+            }
+
+            updateHUD() {
+                document.getElementById('hud-score').innerText = Math.floor(this.score);
+                document.getElementById('hud-combo').innerText = this.combo;
+                const oppHealth = 100 - this.health;
+                document.getElementById('health-bar-opp').style.width = `${oppHealth}%`;
+                document.getElementById('health-bar-player').style.width = `${this.health}%`;
+                document.getElementById('health-bar-head').style.left = `${oppHealth}%`;
+            }
+
+            checkGameOver() {
+                if (this.health <= 0) this.endBattle(false);
+            }
+
+            endBattle(win = true) {
+                audioEngine.stopSong();
+                this.showScreen('RESULTS');
+
+                const accuracy = this.totalNotes > 0 ? Math.round((this.hits / this.totalNotes) * 100) : 100;
+                let rank = 'S';
+                if (accuracy < 90) rank = 'A';
+                if (accuracy < 75) rank = 'B';
+                if (accuracy < 60) rank = 'C';
+                if (!win || accuracy < 40) rank = 'F';
+
+                document.getElementById('results-title').innerText = win ? 'BATALHA CONCLUÍDA!' : 'GAME OVER!';
+                document.getElementById('results-title').style.color = win ? '#00f0ff' : '#ef4444';
+                document.getElementById('results-rank').innerText = rank;
+                document.getElementById('results-score').innerText = Math.floor(this.score);
+                document.getElementById('results-accuracy').innerText = `${accuracy}%`;
+                document.getElementById('results-maxcombo').innerText = this.maxCombo;
+                document.getElementById('results-hits').innerText = this.hits;
+            }
+
+            run() {
+                const loop = (timestamp) => {
+                    const pulse = (Math.sin(timestamp * 0.008) + 1) / 2;
+                    this.stageRenderer.render(this.selectedSong.stage, pulse);
+
+                    const w = this.canvas.width; const h = this.canvas.height;
+                    const scale = Math.min(w, h) / 700;
+
+                    this.charRenderer.drawOpponent(w * 0.25, h * 0.65, scale, this.selectedSong.opponent, this.oppPose, pulse);
+                    this.charRenderer.drawPlayer(w * 0.75, h * 0.65, scale, this.playerPose, pulse);
+
+                    if (this.state === 'PLAYING') {
+                        const laneWidth = Math.min(85, w * 0.22);
+                        const laneStartX = (w - (laneWidth * 4)) / 2;
+                        const currentTime = audioEngine.ctx ? audioEngine.ctx.currentTime : 0;
+                        const targetY = this.getTargetY();
+
+                        this.noteManager.update(currentTime, targetY, () => {
+                            this.combo = 0; this.health = Math.max(0, this.health - 8);
+                            this.setPose('PLAYER', 'MISS');
+                            this.updateHUD(); this.checkGameOver();
+                        });
+
+                        this.noteManager.draw(this.ctx, laneStartX, laneWidth, targetY);
+                    }
+                    requestAnimationFrame(loop);
+                };
+                requestAnimationFrame(loop);
+            }
+        }
+
+        window.onload = () => {
+            const engine = new GameEngine();
+            engine.run();
+        };
+    </script>
+</body>
+</html>
